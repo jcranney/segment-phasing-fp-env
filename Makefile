@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := all
 
-PROJECT := flappy_bird_env
+PROJECT := segment_phasing_fp__env
 
 .PHONY: all
 all: clean uninstall install

@@ -1,23 +1,23 @@
-# Flappy Bird Env
+# Segment Phasing Focal-plane Env
 
-<p align="center">
+<!--<p align="center">
     <img src="https://raw.githubusercontent.com/robertoschiavone/flappy-bird-env/main/flappy-bird.gif"
         alt="flappy bird"/>
-</p>
+</p>-->
 
 <table>
     <tbody>
         <tr>
             <td>Action Space</td>
-            <td>Discrete(2)</td>
+            <td>Box(6)</td>
         </tr>
         <tr>
             <td>Observation Shape</td>
-            <td>(800, 576, 3)</td>
+            <td>(20, 20)</td>
         </tr>
         <tr>
             <td>Observation High</td>
-            <td>255</td>
+            <td>65535</td>
         </tr>
         <tr>
             <td>Observation Low</td>
@@ -25,19 +25,21 @@
         </tr>
         <tr>
             <td>Import</td>
-            <td>import flappy_bird_env  # noqa<br/>gymnasium.make("FlappyBird-v0")</td>
+            <td>import segment_phasing_fp_env  # noqa<br/>gymnasium.make("SegmentPhasingFP-v0")</td>
         </tr>
     </tbody>
 </table>
 
 ## Description
 
-Flappy Bird as a Farama Gymnasium environment.
+GMT focal-plane segment phasing as a Farama Gymnasium environment.
 
 ### Installation
 
 ```bash
-pip install flappy-bird-env
+git clone https://github.com/jcranney/segment_phasing_fp_env
+cd segment_phasing_fp_env
+pip install .
 ```
 
 ### Usage
@@ -45,16 +47,23 @@ pip install flappy-bird-env
 1. Play it by running
 
 ```bash
-python -m flappy_bird_env
+python -m segment_phasing_fp_env
 ```
 
-Press `space` to flap the wings.
+The above "playing" mode is mostly useless, but if it runs then everything has been installed correctly. Press `space` to drive the 1st segment up, which should have a notable effect on the focal-plane image. 
+
+If the above doesn't work due to a `GLIBCXX` error, try:
+```bash
+conda install -c conda-forge libstdcxx-ng=12
+```
+(see [here](https://github.com/microsoft/DeepSpeed/issues/2886))
 
 2. Import it to train your RL model
 
 ```python
-import flappy_bird_env  # noqa
-env = gymnasium.make("FlappyBird-v0")
+import gymnasium
+import segment_phasing_fp_env
+env = gymnasium.make("SegmentPhasingFP-v0")
 ```
 
 The package relies on ```import``` side-effects to register the environment
@@ -63,22 +72,21 @@ necessary to access the environment.
 
 ## Action Space
 
-Flappy Bird has the action space `Discrete(2)`.
+`SegmentPhasingFP-v0` has the action space `Box(low=-np.inf, high=np.inf, shape=(6,))`. Each element corresponds to a change in the segment piston command, in units of radians. Note that the system is blind to global piston, so there are only 6 degrees of freedom to actuate. These are the global-piston-removed segment piston modes for the outer six segments:
 
-| Value | Meaning    |
-|-------|------------|
-| 0     | NOOP       |
-| 1     | flap wings |
+<p align="center">
+    <img src="https://raw.githubusercontent.com/jcranney/segment-phasing-fp-env/main/modes.png"
+        alt="modes.png"/>
+</p>
+
 
 ## Observation Space
 
-The observation will be the RGB image that is displayed to a human player with
-observation space `Box(low=0, high=255, shape=(800, 576, 3), dtype=np.uint8)`.
+The observation is the noisy and slightly undersampled OIWFS image, `Box(low=0, high=65536, shape=(20, 20), dtype=np.uint16)`.
 
 ### Rewards
 
-You get `+1` every time you pass a pipe, otherwise `+0.001` for each frame where you
-don't collide against the top and bottom bounds, or against a pipe.
+You get `+{strehl_ratio}` every time you make it another step without dipping below the Strehl minimum of 10%.
 
 ## Version History
 

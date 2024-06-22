@@ -1,1 +1,1 @@
-recursive-include flappy_bird_env/images *
+recursive-include segment_phasing_fp_env/images *

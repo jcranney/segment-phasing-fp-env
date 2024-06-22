@@ -1,17 +1,17 @@
 [project]
-name = "flappy-bird-env"
-version = "0.1.6"
-description = """Flappy Bird as a Farama Gymnasium environment."""
+name = "segment-phasing-fp-env"
+version = "0.0.1"
+description = """GMT focal-plane segment phasing as a Farama Gymnasium environment."""
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [
-    { name = "Roberto Schiavone", email = "hello@robertoschiavone.io" },
+    { name = "Jesse Cranney", email = "jesse.cranney@anu.edu.au" },
 ]
 maintainers = [
-    { name = "Roberto Schiavone", email = "hello@robertoschiavone.io" },
+    { name = "Jesse Cranney", email = "jesse.cranney@anu.edu.au" },
 ]
-keywords = ["flappy-bird", "gymnasium", "reinforcement-learning"]
+keywords = ["segment-phasing", "adaptive optics", "gymnasium", "reinforcement-learning"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -19,15 +19,15 @@ classifiers = [
 ]
 dependencies = [
     "gymnasium ~= 0.29.0",
-    "numpy ~= 1.25.2",
+    "numpy ~= 1.26.4",
     "pygame ~= 2.5.0"
 ]
 
 [build-system]
-requires = ["setuptools ~= 65.5.0"]
+requires = ["setuptools ~= 69.5.1"]
 
 [project.urls]
-homepage = "https://github.com/robertoschiavone/flappy-bird-env"
-documentation = "https://github.com/robertoschiavone/flappy-bird-env"
-repository = "https://github.com/robertoschiavone/flappy-bird-env.git"
-changelog = "https://github.com/robertoschiavone/flappy-bird-env/releases"
+homepage = "https://github.com/jcranney/segment-phasing-fp-env"
+documentation = "https://github.com/jcranney/segment-phasing-fp-env"
+repository = "https://github.com/jcranney/segment-phasing-fp-env.git"
+changelog = "https://github.com/jcranney/segment-phasing-fp-env/releases"
