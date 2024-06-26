@@ -68,7 +68,8 @@ class PSF(Drawable):
 
     @property
     def strehl(self) -> float:
-        return self.image.max()
+        # TODO: this should be changed from "true" Strehl to "estimated" Strehl
+        return self.psf.max()
 
     @property
     def le_psf(self) -> np.ndarray:

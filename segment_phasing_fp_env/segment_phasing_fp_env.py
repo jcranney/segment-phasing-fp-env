@@ -13,7 +13,7 @@ from .psf import PSF
 
 
 class SegmentPhasingFPEnv(gym.Env):
-    action_space = Box(low=-np.inf, high=np.inf, shape=(6,))
+    action_space = Box(low=-2.0, high=2.0, shape=(6,))
     """
     The Space object corresponding to valid actions, all valid actions should
     be contained with the space.
@@ -44,11 +44,19 @@ class SegmentPhasingFPEnv(gym.Env):
             self._clock = pygame.time.Clock()
 
         self._last_action = None
-        self._score = 0.0
+        self._upscale = 32  # upscale image output for display purposes
+        self._score: float = 0.0  # score for the episode
+        self.max_steps: int = 20  # maximum steps per episode
+        self.step_counter: int = 0  # steps in this episode so far
 
     @property
     def observation(self) -> ObsType:
-        return self._psf.image
+        """The observation is the most recent frame computed from the
+        environment. This alone is not enough to estimate the segment phase,
+        but a successful solution could utilise a time-series of this data
+        along with the command sequence applied.
+        """
+        return self._image
 
     @property
     def reward(self) -> SupportsFloat:
@@ -58,7 +66,17 @@ class SegmentPhasingFPEnv(gym.Env):
 
     @property
     def terminated(self) -> bool:
-        return any([self._psf.strehl < 0.1])
+        """The termination logic is that any of the following conditions
+        imply failure:
+         - Strehl less than 10%,
+         - integrated command greater than 10.0 radians for any more,
+         - too much time elapsed.
+         """
+        return any([
+            self._psf.strehl < 0.1,
+            np.max(np.abs(self._psf.command)) > 10.0,
+            self.step_counter >= self.max_steps,
+        ])
 
     @property
     def truncated(self) -> bool:
@@ -116,13 +134,16 @@ class SegmentPhasingFPEnv(gym.Env):
         however this is deprecated in favour of returning terminated and
         truncated variables.
         """
-
+        self._prev_image = self._image
         self._psf.act(action)
+        self._image = self._psf.image
 
         self._score += self._psf.strehl
 
         if self.render_mode == "human":
             self.render()
+
+        self.step_counter += 1
 
         return self.observation, self.reward, self.terminated, \
             self.truncated, self.info
@@ -174,10 +195,15 @@ class SegmentPhasingFPEnv(gym.Env):
         super().reset(seed=seed)
 
         self._psf = PSF()
+        self._prev_image = self._psf.image
+        self._psf.step()
+        self._image = self._psf.image
         self._surface = None
 
         self._last_action = None
         self._score = 0
+
+        self.step_counter = 0
 
         if self.render_mode is not None:
             self.render()
@@ -210,7 +236,13 @@ class SegmentPhasingFPEnv(gym.Env):
         the environment. A frame is a `np.ndarray` with shape (x, y, 3)
         representing RGB values for an x-by-y pixel image.
         """
-        repeats = 32
+        array = np.tile(
+            (self.observation**0.5)[:, :, None].astype(np.uint8),
+            [1, 1, 3]
+        )
+        array = array.repeat(self._upscale, axis=0).repeat(
+            self._upscale, axis=1)
+
         if self._surface is None:
             pygame.init()
 
@@ -220,39 +252,32 @@ class SegmentPhasingFPEnv(gym.Env):
                 self._surface = pygame.display.set_mode(self._shape)
             elif self.render_mode == "rgb_array":
                 self._surface = pygame.Surface(self._shape)
-                array = np.tile(
-                    (self.observation**0.5)[:, :, None].astype(np.uint8),
-                    [1, 1, 3]
-                )
-                array = array.repeat(repeats, axis=0).repeat(repeats, axis=1)
                 return array
 
         assert self._surface is not None, \
             "Something went wrong with pygame. This should never happen."
 
-        self._psf.draw(self._surface)
+        self._surface.blit(
+            pygame.surfarray.make_surface(array),
+            (0, 0)
+        )
 
         if self.render_mode == "human":
             pygame.event.pump()
             pygame.display.update()
             self._clock.tick(self.metadata["render_fps"])
         elif self.render_mode == "rgb_array":
-            array = np.tile(
-                (self.observation**0.5)[:, :, None].astype(np.uint8),
-                [1, 1, 3]
-            )
-            array = array.repeat(repeats, axis=0).repeat(repeats, axis=1)
             return array
 
     @property
     @functools.cache
     def _width(self) -> int:
-        return self.observation_space.shape[1]
+        return self.observation_space.shape[1]*self._upscale
 
     @property
     @functools.cache
     def _height(self) -> int:
-        return self.observation_space.shape[0]
+        return self.observation_space.shape[0]*self._upscale
 
     @property
     @functools.cache
