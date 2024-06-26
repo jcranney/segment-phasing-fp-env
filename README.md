@@ -1,7 +1,7 @@
 # Segment Phasing Focal-plane Env
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/jcranney/segment-phasing-fp-env/main/loop-closing-fake.gif"
+    <img style="width:200px" src="https://raw.githubusercontent.com/jcranney/segment-phasing-fp-env/main/segment_phasing_fp_env/images/loop_closed_fake.GIF"
         alt="loop closing fake"/>
 </p>
 
@@ -75,7 +75,7 @@ necessary to access the environment.
 `SegmentPhasingFP-v0` has the action space `Box(low=-np.inf, high=np.inf, shape=(6,))`. Each element corresponds to a change in the segment piston command, in units of radians. Note that the system is blind to global piston, so there are only 6 degrees of freedom to actuate. These are the global-piston-removed segment piston modes for the outer six segments:
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/jcranney/segment-phasing-fp-env/main/segment_phasing_ph_env/images/modes.png"
+    <img src="https://raw.githubusercontent.com/jcranney/segment-phasing-fp-env/main/segment_phasing_fp_env/images/modes.png"
         alt="modes.png"/>
 </p>
 
