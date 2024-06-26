@@ -1,7 +1,7 @@
 # Segment Phasing Focal-plane Env
 
 <p align="center">
-    <img style="width:200px" src="https://raw.githubusercontent.com/jcranney/segment-phasing-fp-env/main/segment_phasing_fp_env/images/loop_closed_fake.GIF"
+    <img style="width:300px" src="https://raw.githubusercontent.com/jcranney/segment-phasing-fp-env/main/segment_phasing_fp_env/images/loop_closed_fake.GIF"
         alt="loop closing fake"/>
 </p>
 
