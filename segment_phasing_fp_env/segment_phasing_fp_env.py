@@ -193,8 +193,7 @@ class SegmentPhasingFPEnv(gym.Env):
         """
 
         super().reset(seed=seed)
-
-        self._psf = PSF()
+        self._psf = PSF(seed=seed)
         self._prev_image = self._psf.image
         self._psf.step()
         self._image = self._psf.image

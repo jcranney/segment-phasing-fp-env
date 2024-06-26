@@ -9,11 +9,13 @@ class PSF(Drawable):
     corr: float = 0.99  # correlation between adjacent samples of state
     nmodes: int = 6  # number of modes in state
     pup_width: int = 64  # width of pupil in pixels
-    flux: float = 1e4  # photons per frame
+    flux: float = 1e5  # photons per frame
     noise: float = 0.5  # RON in photo-electrons per pixel
     dark: float = 10.0  # photons per pixel of dark current/background
 
-    def __init__(self):
+    def __init__(self, seed: int = None):
+        if seed is not None:
+            np.random.seed(seed)
         self.state = np.random.randn(self.nmodes).astype(np.float32)
         self.state *= self.sigma
         self.command = np.zeros(self.nmodes, dtype=np.float32)
