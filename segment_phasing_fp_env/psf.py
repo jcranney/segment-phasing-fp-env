@@ -29,7 +29,7 @@ class PSF(Drawable):
             "images",
             "modes64.npy",
         )
-        self.modes = np.load(path_modes).astype(np.float32)
+        self.modes = np.load(path_modes)
         path_dft = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "images", "dft64.npy"
         )
@@ -46,7 +46,6 @@ class PSF(Drawable):
 
     def draw(self, window: pygame.Surface) -> None:
         window.blit(
-            #  pygame.surfarray.make_surface((self.image/2**8).astype(np.uint8)),
             pygame.surfarray.make_surface(self.image),
             (0, 0),
         )
@@ -62,13 +61,15 @@ class PSF(Drawable):
             phi = np.einsum(
                 "ij,i->j",
                 self.modes,
-                self.residual.astype(np.float32),
+                self.residual,
+                optimize=True,
             )
         else:
             phi = np.einsum(
                 "ij,i->j",
                 self.modes,
-                residual.astype(np.float32),
+                residual,
+                optimize=True,
             )
         psi = np.exp(1j * phi)
         psi_out = np.einsum("ij,j->i", self.dft, psi, optimize=True)
