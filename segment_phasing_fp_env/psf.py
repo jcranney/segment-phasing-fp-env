@@ -8,7 +8,6 @@ class PSF(Drawable):
     sigma: float = 1.0  # std radians of segment piston per mode
     corr: float = 0.99  # correlation between adjacent samples of state
     nmodes: int = 6  # number of modes in state
-    pup_width: int = 64  # width of pupil in pixels
     flux: float = 1e5  # photons per frame
     noise: float = 0.5  # RON in photo-electrons per pixel
     dark: float = 10.0  # photons per pixel of dark current/background
@@ -30,11 +29,11 @@ class PSF(Drawable):
             "images",
             "modes64.npy",
         )
-        self.modes = np.load(path_modes)
+        self.modes = np.load(path_modes).astype(np.float32)
         path_dft = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "images", "dft64.npy"
         )
-        self.dft = np.load(path_dft)
+        self.dft = np.load(path_dft).astype(np.complex64)
 
         self.ref_max = np.max(np.abs(self.dft.sum(axis=1)) ** 2)
 
@@ -60,11 +59,19 @@ class PSF(Drawable):
     def calc_psf(self, *, residual=None):
         """update PSF based on current state"""
         if residual is None:
-            phi = np.einsum("ij,i->j", self.modes, self.residual)
+            phi = np.einsum(
+                "ij,i->j",
+                self.modes,
+                self.residual.astype(np.float32),
+            )
         else:
-            phi = np.einsum("ij,i->j", self.modes, residual)
+            phi = np.einsum(
+                "ij,i->j",
+                self.modes,
+                residual.astype(np.float32),
+            )
         psi = np.exp(1j * phi)
-        psi_out = np.einsum("ij,j->i", self.dft, psi)
+        psi_out = np.einsum("ij,j->i", self.dft, psi, optimize=True)
         psf = np.abs(psi_out) ** 2
         psf = psf.reshape([int(psf.shape[0] ** 0.5)] * 2)
         self.psf = psf / self.ref_max
@@ -114,6 +121,4 @@ class PSF(Drawable):
 
     def poke(self, residual):
         self.calc_psf(residual=residual)
-        img = self.image
-        self.calc_psf()  # incase someone calls self.image before next step
-        return img
+        return self.image
