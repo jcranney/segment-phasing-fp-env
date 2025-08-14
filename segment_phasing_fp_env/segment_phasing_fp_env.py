@@ -19,8 +19,9 @@ class SegmentPhasingFPEnv(gym.Env):
     be contained with the space.
     """
 
-    observation_space = Box(low=0, high=2**16-1, shape=(20, 20),
-                            dtype=np.uint16)
+    observation_space = Box(
+        low=0, high=2**16 - 1, shape=(20, 20), dtype=np.uint16
+    )
     """
     The Space object corresponding to valid observations, all valid
     observations should be contained with the space. It is static across all
@@ -33,10 +34,10 @@ class SegmentPhasingFPEnv(gym.Env):
     etc.
     """
 
+    _psf: PSF
+
     def __init__(self, render_mode: str | None = None):
         self.render_mode = render_mode
-
-        self._psf = None
 
         self._surface = None
         self._clock = None
@@ -71,12 +72,14 @@ class SegmentPhasingFPEnv(gym.Env):
          - Strehl less than 10%,
          - integrated command greater than 10.0 radians for any more,
          - too much time elapsed.
-         """
-        return any([
-            self._psf.strehl < 0.1,
-            np.max(np.abs(self._psf.command)) > 10.0,
-            self.step_counter >= self.max_steps,
-        ])
+        """
+        return any(
+            [
+                self._psf.strehl < 0.1,
+                np.max(np.abs(self._psf.command)) > 10.0,
+                self.step_counter >= self.max_steps,
+            ]
+        )
 
     @property
     def truncated(self) -> bool:
@@ -87,13 +90,16 @@ class SegmentPhasingFPEnv(gym.Env):
         return {
             "le_psf": self._psf.le_psf,
             "le_strehl": self._psf.le_strehl,
+            "se_strehl": self._psf.strehl,
             "residual_modes": self._psf.residual,
             "last_action": self._last_action,
-            "score": self._score
+            "score": self._score,
+            "state": self._psf.state,
         }
 
-    def step(self, action: ActType) -> \
-            tuple[ObsType, SupportsFloat, bool, bool, Dict[str, Any]]:
+    def step(
+        self, action: ActType
+    ) -> tuple[ObsType, SupportsFloat, bool, bool, Dict[str, Any]]:
         """
         Run one timestep of the environment’s dynamics using the agent actions.
 
@@ -145,12 +151,17 @@ class SegmentPhasingFPEnv(gym.Env):
 
         self.step_counter += 1
 
-        return self.observation, self.reward, self.terminated, \
-            self.truncated, self.info
+        return (
+            self.observation,
+            self.reward,
+            self.terminated,
+            self.truncated,
+            self.info,
+        )
 
-    def reset(self, *, seed: int | None = None,
-              options: Dict[str, Any] | None = None) \
-            -> Tuple[ObsType, Dict[str, Any]]:
+    def reset(
+        self, *, seed: int | None = None, options: Dict[str, Any] | None = None
+    ) -> Tuple[ObsType, Dict[str, Any]]:
         """
         Resets the environment to an initial internal state, returning an
         initial observation and info.
@@ -236,11 +247,11 @@ class SegmentPhasingFPEnv(gym.Env):
         representing RGB values for an x-by-y pixel image.
         """
         array = np.tile(
-            (self.observation**0.5)[:, :, None].astype(np.uint8),
-            [1, 1, 3]
+            (self.observation**0.5)[:, :, None].astype(np.uint8), [1, 1, 3]
         )
         array = array.repeat(self._upscale, axis=0).repeat(
-            self._upscale, axis=1)
+            self._upscale, axis=1
+        )
 
         if self._surface is None:
             pygame.init()
@@ -253,13 +264,11 @@ class SegmentPhasingFPEnv(gym.Env):
                 self._surface = pygame.Surface(self._shape)
                 return array
 
-        assert self._surface is not None, \
+        assert self._surface is not None, (
             "Something went wrong with pygame. This should never happen."
-
-        self._surface.blit(
-            pygame.surfarray.make_surface(array),
-            (0, 0)
         )
+
+        self._surface.blit(pygame.surfarray.make_surface(array), (0, 0))
 
         if self.render_mode == "human":
             pygame.event.pump()
@@ -271,12 +280,16 @@ class SegmentPhasingFPEnv(gym.Env):
     @property
     @functools.cache
     def _width(self) -> int:
-        return self.observation_space.shape[1]*self._upscale
+        if self.observation_space.shape is None:
+            raise RuntimeError("observation space is null")
+        return self.observation_space.shape[1] * self._upscale
 
     @property
     @functools.cache
     def _height(self) -> int:
-        return self.observation_space.shape[0]*self._upscale
+        if self.observation_space.shape is None:
+            raise RuntimeError("observation space is null")
+        return self.observation_space.shape[0] * self._upscale
 
     @property
     @functools.cache
