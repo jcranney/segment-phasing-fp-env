@@ -8,7 +8,7 @@ class PSF(Drawable):
     sigma: float = 1.0  # std radians of segment piston per mode
     corr: float = 0.99  # correlation between adjacent samples of state
     nmodes: int = 6  # number of modes in state
-    flux: float = 1e5  # photons per frame
+    flux: float = 5e4  # photons per frame
     noise: float = 0.5  # RON in photo-electrons per pixel
     dark: float = 10.0  # photons per pixel of dark current/background
     ideal: bool  # if true, ignore all noise and saturation of detector
