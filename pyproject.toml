@@ -32,3 +32,6 @@ homepage = "https://github.com/jcranney/segment-phasing-fp-env"
 documentation = "https://github.com/jcranney/segment-phasing-fp-env"
 repository = "https://github.com/jcranney/segment-phasing-fp-env.git"
 changelog = "https://github.com/jcranney/segment-phasing-fp-env/releases"
+
+[tool.uv]
+constraint-dependencies = ["llvm>0.43.0"]
