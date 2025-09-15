@@ -1,6 +1,6 @@
 # segment_phasing_fp_env/psf_autodiff.py
 from __future__ import annotations
-
+import jax
 import os
 import numpy as np
 import jax.numpy as jnp
@@ -12,6 +12,7 @@ from .drawable import Drawable
 def _make_calc_psf_core_jax(side: int):
     @jit
     def f(modes, dft, ref_max, residual):
+        # jax.debug.print("hello w",ordered=True)
         phi = jnp.einsum("ij,i->j", modes, residual, optimize=True)
         psi = jnp.exp(1j * phi)
         psi_out = jnp.einsum("ij,j->i", dft, psi, optimize=True)
@@ -33,7 +34,7 @@ class PSFAutoDiff(Drawable):
     dark: float = 10.0
     ideal: bool
 
-    def __init__(self, seed: int | None = None, ideal: bool = False):
+    def __init__(self, seed: int | None = None, ideal: bool = True):
         self.ideal = ideal
         key = random.PRNGKey(0 if seed is None else seed)
 
@@ -109,6 +110,31 @@ class PSFAutoDiff(Drawable):
         psf = self._calc_psf(self.modes, self.dft, self.ref_max, residual)
         img = self._rebin(psf, 2) * self.flux
         return img.reshape(-1)
+
+    def get_h_eval_jax(self, rebin_factor: int = 2):
+        """
+        Return a JAX-traceable measurement function h_eval(x):
+        x (nmodes,) -> flattened noiseless, rebinned image (nmeas,).
+        """
+        modes_j  = self.modes          # (nmodes, P)
+        dft_j    = self.dft            # (F, P) where F = side*side
+        ref_max  = self.ref_max        # scalar
+        flux_j   = jnp.asarray(self.flux)
+        side     = int(self.side)
+        out_side = side // rebin_factor
+        calc_psf = self._calc_psf      # jitted core: f(modes, dft, ref_max, residual)->(side,side)
+
+        @jax.jit
+        def h_eval(x: jnp.ndarray) -> jnp.ndarray:
+            # x: (nmodes,)
+            psf = calc_psf(modes_j, dft_j, ref_max, x)         # (side, side)
+            # Rebin by 'rebin_factor' (default 2) then scale by flux
+            img = psf.reshape(out_side, rebin_factor, out_side, rebin_factor).mean(3).mean(1)
+            img = img * flux_j
+            return img.reshape((-1,))                           # (nmeas, )
+
+        return h_eval
+
 
     def measurement_jacobian(self, x: jnp.ndarray | None = None) -> jnp.ndarray:
         x = self.residual if x is None else x
