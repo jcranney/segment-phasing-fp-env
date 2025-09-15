@@ -18,9 +18,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries"
 ]
 dependencies = [
-    "gymnasium ~= 1.2.0",
-    "numpy ~= 2.3.3",
-    "pygame ~= 2.6.1"
+    "gymnasium",
+    "numpy",
+    "pygame",
+    "jax"
 ]
 
 [build-system]
