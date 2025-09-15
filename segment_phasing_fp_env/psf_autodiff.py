@@ -8,7 +8,7 @@ from jax import random, jit, jacfwd, jacrev
 from .drawable import Drawable
 
 
-#Factory function: bind `side` and return JIT pure function
+# Factory function: bind `side` and return JIT pure function
 def _make_calc_psf_core_jax(side: int):
     @jit
     def f(modes, dft, ref_max, residual):
@@ -41,8 +41,12 @@ class PSFAutoDiff(Drawable):
         self.state = random.normal(key, (self.nmodes,)) * self.sigma
         self.command = jnp.zeros(self.nmodes)
         base = os.path.dirname(os.path.realpath(__file__))
-        self.pupil = jnp.array(np.load(os.path.join(base, "images", "pup64.npy")))
-        self.modes = jnp.array(np.load(os.path.join(base, "images", "modes64.npy")))
+        self.pupil = jnp.array(
+            np.load(os.path.join(base, "images", "pup64.npy"))
+        )
+        self.modes = jnp.array(
+            np.load(os.path.join(base, "images", "modes64.npy"))
+        )
 
         dft_np = np.load(os.path.join(base, "images", "dft64.npy"))
         rows = int(dft_np.shape[0])
@@ -83,7 +87,8 @@ class PSFAutoDiff(Drawable):
 
         img_np = np.asarray(img, dtype=np.float32)
         img_np = np.random.poisson(img_np + self.dark).astype(np.float32)
-        img_np = img_np + np.random.randn(*img_np.shape).astype(np.float32) * self.noise
+        img_np = img_np + \
+            np.random.randn(*img_np.shape).astype(np.float32) * self.noise
         img_np = np.clip(img_np, 0, 2**16 - 1).astype(np.uint16)
         return img_np
 
@@ -105,7 +110,7 @@ class PSFAutoDiff(Drawable):
         self.calc_psf(residual=residual)
         return self.image
 
-    #Autodiff interface
+    # Autodiff interface
     def poke_flat(self, residual: jnp.ndarray) -> jnp.ndarray:
         psf = self._calc_psf(self.modes, self.dft, self.ref_max, residual)
         img = self._rebin(psf, 2) * self.flux
@@ -116,27 +121,32 @@ class PSFAutoDiff(Drawable):
         Return a JAX-traceable measurement function h_eval(x):
         x (nmodes,) -> flattened noiseless, rebinned image (nmeas,).
         """
-        modes_j  = self.modes          # (nmodes, P)
-        dft_j    = self.dft            # (F, P) where F = side*side
-        ref_max  = self.ref_max        # scalar
-        flux_j   = jnp.asarray(self.flux)
-        side     = int(self.side)
+        modes_j = self.modes          # (nmodes, P)
+        dft_j = self.dft            # (F, P) where F = side*side
+        ref_max = self.ref_max        # scalar
+        flux_j = jnp.asarray(self.flux)
+        side = int(self.side)
         out_side = side // rebin_factor
-        calc_psf = self._calc_psf      # jitted core: f(modes, dft, ref_max, residual)->(side,side)
+
+        # jitted core: f(modes, dft, ref_max, residual)->(side,side)
+        calc_psf = self._calc_psf
 
         @jax.jit
         def h_eval(x: jnp.ndarray) -> jnp.ndarray:
             # x: (nmodes,)
             psf = calc_psf(modes_j, dft_j, ref_max, x)         # (side, side)
             # Rebin by 'rebin_factor' (default 2) then scale by flux
-            img = psf.reshape(out_side, rebin_factor, out_side, rebin_factor).mean(3).mean(1)
+            img = psf.reshape(
+                out_side, rebin_factor, out_side, rebin_factor
+            ).mean(3).mean(1)
             img = img * flux_j
-            return img.reshape((-1,))                           # (nmeas, )
+            return img.reshape((-1,))  # (nmeas, )
 
         return h_eval
 
-
-    def measurement_jacobian(self, x: jnp.ndarray | None = None) -> jnp.ndarray:
+    def measurement_jacobian(
+        self, x: jnp.ndarray | None = None
+    ) -> jnp.ndarray:
         x = self.residual if x is None else x
         return jacfwd(self.poke_flat)(x)
 
