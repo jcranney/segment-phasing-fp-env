@@ -47,7 +47,7 @@ class SegmentPhasingFPEnv(gym.Env):
         self._last_action = None
         self._upscale = 32  # upscale image output for display purposes
         self._score: float = 0.0  # score for the episode
-        self.max_steps: int = 20  # maximum steps per episode
+        self.max_steps: int = 100  # maximum steps per episode
         self.step_counter: int = 0  # steps in this episode so far
 
     @property
