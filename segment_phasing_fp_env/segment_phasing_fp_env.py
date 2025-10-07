@@ -88,13 +88,13 @@ class SegmentPhasingFPEnv(gym.Env):
     @property
     def info(self) -> Dict[str, Any]:
         return {
-            "le_psf": self._psf.le_psf,
-            "le_strehl": self._psf.le_strehl,
-            "se_strehl": self._psf.strehl,
-            "residual_modes": self._psf.residual,
-            "last_action": self._last_action,
-            "score": self._score,
-            "state": self._psf.state,
+            "le_psf": self._psf.le_psf,  # long exposure point spread function
+            "le_strehl": self._psf.le_strehl,  # strehl ratio (derived from le_strehl)
+            "se_strehl": self._psf.strehl,  # strehl ratio (derived from instantaneous psf)
+            "residual_modes": self._psf.residual,  # residual mode vector (only available in simulation)
+            "last_action": self._last_action,  # previous action applied
+            "score": self._score,  # integrated reward for this episode
+            "state": self._psf.state,  # hidden state of environment (only available in simulation)
         }
 
     def step(
